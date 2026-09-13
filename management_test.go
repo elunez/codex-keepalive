@@ -48,6 +48,24 @@ func callManagement(t *testing.T, request pluginapi.ManagementRequest) pluginapi
 	return response
 }
 
+func TestManagementRegistrationUsesNonConflictingSettingsRoute(t *testing.T) {
+	registration := registerManagement()
+	var hasGet, hasPut bool
+	for _, route := range registration.Routes {
+		switch {
+		case route.Method == http.MethodGet && route.Path == managementBasePath+"/settings":
+			hasGet = true
+		case route.Method == http.MethodPut && route.Path == managementBasePath+"/settings":
+			hasPut = true
+		case route.Path == managementBasePath+"/config":
+			t.Fatalf("plugin must not register CPA-reserved /config route")
+		}
+	}
+	if !hasGet || !hasPut {
+		t.Fatalf("expected GET and PUT settings routes, got %+v", registration.Routes)
+	}
+}
+
 func TestManagementStatusAndPaginatedLogs(t *testing.T) {
 	current := newTestService(t, &fakeHost{})
 	installCurrentService(t, current)
@@ -103,9 +121,9 @@ func TestManagementConfigGetAndPut(t *testing.T) {
 	current := newTestService(t, &fakeHost{})
 	installCurrentService(t, current)
 
-	getResponse := callManagement(t, pluginapi.ManagementRequest{Method: http.MethodGet, Path: managementBasePath + "/config"})
+	getResponse := callManagement(t, pluginapi.ManagementRequest{Method: http.MethodGet, Path: managementBasePath + "/settings"})
 	if getResponse.StatusCode != http.StatusOK {
-		t.Fatalf("unexpected GET /config status: %d", getResponse.StatusCode)
+		t.Fatalf("unexpected GET /settings status: %d", getResponse.StatusCode)
 	}
 	var currentCfg configPayload
 	if err := json.Unmarshal(getResponse.Body, &currentCfg); err != nil {
@@ -127,11 +145,11 @@ func TestManagementConfigGetAndPut(t *testing.T) {
 	rawUpdate, _ := json.Marshal(updatedPayload)
 	putResponse := callManagement(t, pluginapi.ManagementRequest{
 		Method: http.MethodPut,
-		Path:   managementBasePath + "/config",
+		Path:   managementBasePath + "/settings",
 		Body:   rawUpdate,
 	})
 	if putResponse.StatusCode != http.StatusOK {
-		t.Fatalf("unexpected PUT /config status: %d, body: %s", putResponse.StatusCode, string(putResponse.Body))
+		t.Fatalf("unexpected PUT /settings status: %d, body: %s", putResponse.StatusCode, string(putResponse.Body))
 	}
 
 	statusResponse := callManagement(t, pluginapi.ManagementRequest{Method: http.MethodGet, Path: managementBasePath + "/status"})
@@ -147,7 +165,7 @@ func TestManagementConfigGetAndPut(t *testing.T) {
 		t.Fatalf("read persisted config after PUT: %v", err)
 	}
 	if persisted == nil || persisted.ActivationTimesText != "09:30,21:30" || persisted.ActivationRequestsPerRun != 3 || persisted.ActivationConcurrency != 4 {
-		t.Fatalf("PUT /config did not persist config.json: %+v", persisted)
+		t.Fatalf("PUT /settings did not persist config.json: %+v", persisted)
 	}
 }
 
@@ -162,9 +180,9 @@ func TestManagementConfigGetReloadsPersistedConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	response := callManagement(t, pluginapi.ManagementRequest{Method: http.MethodGet, Path: managementBasePath + "/config"})
+	response := callManagement(t, pluginapi.ManagementRequest{Method: http.MethodGet, Path: managementBasePath + "/settings"})
 	if response.StatusCode != http.StatusOK {
-		t.Fatalf("unexpected GET /config status: %d", response.StatusCode)
+		t.Fatalf("unexpected GET /settings status: %d", response.StatusCode)
 	}
 	var payload configPayload
 	if err := json.Unmarshal(response.Body, &payload); err != nil {

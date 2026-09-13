@@ -39,8 +39,10 @@ func registerManagement() pluginapi.ManagementRegistrationResponse {
 			{Method: http.MethodGet, Path: managementBasePath + "/logs", Description: "分页读取执行日志。"},
 			{Method: http.MethodPost, Path: managementBasePath + "/execute", Description: "立即执行一次唤醒任务。"},
 			{Method: http.MethodDelete, Path: managementBasePath + "/logs", Description: "清空执行日志。"},
-			{Method: http.MethodGet, Path: managementBasePath + "/config", Description: "读取当前插件配置。"},
-			{Method: http.MethodPut, Path: managementBasePath + "/config", Description: "更新插件配置。"},
+			// /config 已被 CPA 内置插件配置接口占用，这里使用独立路径，
+			// 确保请求进入插件处理器并写入持久化的 config.json。
+			{Method: http.MethodGet, Path: managementBasePath + "/settings", Description: "读取当前插件配置。"},
+			{Method: http.MethodPut, Path: managementBasePath + "/settings", Description: "更新插件配置。"},
 		},
 	}
 }
@@ -88,12 +90,12 @@ func handleManagement(raw []byte) ([]byte, error) {
 			return okEnvelope(jsonResponse(http.StatusInternalServerError, map[string]string{"error": err.Error()}))
 		}
 		return okEnvelope(jsonResponse(http.StatusOK, map[string]bool{"ok": true}))
-	case method == http.MethodGet && path == "/config":
+	case method == http.MethodGet && path == "/settings":
 		if err := current.ReloadPersistedConfig(); err != nil {
 			return okEnvelope(jsonResponse(http.StatusInternalServerError, map[string]string{"error": "读取持久化配置失败: " + err.Error()}))
 		}
 		return okEnvelope(jsonResponse(http.StatusOK, buildConfigPayload(current.Config())))
-	case method == http.MethodPut && path == "/config":
+	case method == http.MethodPut && path == "/settings":
 		newCfg, err := decodeConfigJSON(request.Body, current.Config())
 		if err != nil {
 			return okEnvelope(jsonResponse(http.StatusBadRequest, map[string]string{"error": err.Error()}))

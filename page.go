@@ -187,7 +187,7 @@ async function openSettingsModal(){
   try{
     // 使用专用配置接口读取 config.json，字段与保存接口保持一致，
     // 避免把 /status 的展示字段误当成配置字段而回填默认值。
-    const data=await request('/config');
+    const data=await request('/settings');
     const enabled=data.activation_enabled!==false;
     $('cfg-enabled').classList.toggle('on',enabled);
     $('cfg-enabled').setAttribute('aria-checked',String(enabled));
@@ -242,7 +242,7 @@ $('settings-form').addEventListener('submit',async e=>{
     activation_random_delay_seconds:Number($('cfg-delay').value)||0
   };
   try{
-    await request('/config',{method:'PUT',body:JSON.stringify(payload)});
+    await request('/settings',{method:'PUT',body:JSON.stringify(payload)});
     notice('配置保存成功');
     closeSettingsModal();
     await refreshStatus();
