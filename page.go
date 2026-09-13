@@ -185,10 +185,10 @@ async function openSettingsModal(){
   const btn=$('open-settings');
   btn.disabled=true;
   try{
-    // /status 会先从 config.json 刷新内存配置，再返回同一份有效设置。
-    // 使用该已存在的状态接口，兼容 CPA 对新增 /config 路由的缓存情况。
-    const data=await request('/status');
-    const enabled=data.enabled!==false;
+    // 使用专用配置接口读取 config.json，字段与保存接口保持一致，
+    // 避免把 /status 的展示字段误当成配置字段而回填默认值。
+    const data=await request('/config');
+    const enabled=data.activation_enabled!==false;
     $('cfg-enabled').classList.toggle('on',enabled);
     $('cfg-enabled').setAttribute('aria-checked',String(enabled));
     $('cfg-times').value=data.activation_times||'';
