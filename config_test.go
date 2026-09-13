@@ -134,6 +134,44 @@ func TestSeparateConfigAndLogsPersistence(t *testing.T) {
 	}
 }
 
+func TestNewServiceIgnoresMalformedLogsDuringRegistration(t *testing.T) {
+	dir := t.TempDir()
+	cfg := defaultConfig()
+	cfg.DataDir = dir
+	cfg.ConfigPath = filepath.Join(dir, "config.json")
+	cfg.LogsPath = filepath.Join(dir, "logs.json")
+	if err := os.WriteFile(cfg.LogsPath, []byte("{"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	service, err := NewService(cfg, &fakeHost{})
+	if err != nil {
+		t.Fatalf("malformed logs must not block service registration: %v", err)
+	}
+	if page := service.QueryLogs(LogQuery{Page: 1, PageSize: 20}); page.Total != 0 {
+		t.Fatalf("malformed logs should be treated as empty, got %d entries", page.Total)
+	}
+}
+
+func TestNewServiceFallsBackWhenPersistedConfigIsInvalid(t *testing.T) {
+	dir := t.TempDir()
+	cfg := defaultConfig()
+	cfg.DataDir = dir
+	cfg.ConfigPath = filepath.Join(dir, "config.json")
+	cfg.LogsPath = filepath.Join(dir, "logs.json")
+	if err := os.WriteFile(cfg.ConfigPath, []byte(`{"activation_model":"","activation_requests_per_run":0}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	service, err := NewService(cfg, &fakeHost{})
+	if err != nil {
+		t.Fatalf("invalid persisted config must not block service registration: %v", err)
+	}
+	if got := service.Config(); got.ActivationModel != cfg.ActivationModel || got.ActivationRequestsPerRun != cfg.ActivationRequestsPerRun {
+		t.Fatalf("service did not fall back to runtime config: %+v", got)
+	}
+}
+
 func TestNewServiceRestoresPersistedConfigBeforeSavingSnapshot(t *testing.T) {
 	dir := t.TempDir()
 	paths := defaultConfig()

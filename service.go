@@ -167,11 +167,12 @@ func NewService(cfg Config, host HostClient) (*Service, error) {
 	if persisted, err := loadConfigFile(cfg.ConfigPath); err != nil {
 		return nil, err
 	} else if persisted != nil {
-		restored, restoreErr := persisted.toConfig(cfg)
-		if restoreErr != nil {
-			return nil, fmt.Errorf("restore config: %w", restoreErr)
+		// 配置文件属于可恢复的持久化数据。升级过程中如果文件来自
+		// 不兼容的旧格式或包含无效值，使用宿主本次传入的配置继续
+		// 注册，避免非关键配置阻断整个插件启动。
+		if restored, restoreErr := persisted.toConfig(cfg); restoreErr == nil {
+			cfg = restored
 		}
-		cfg = restored
 	}
 	logs, err := loadLogsFile(cfg.LogsPath)
 	if err != nil {
@@ -224,7 +225,10 @@ func loadLogsFile(path string) ([]ExecutionLog, error) {
 	}
 	var logs []ExecutionLog
 	if err := json.Unmarshal(raw, &logs); err != nil {
-		return nil, fmt.Errorf("decode logs file: %w", err)
+		// 日志是非关键运行数据。旧版本升级、容器异常退出或手工清空
+		// 文件时可能留下空文件/不完整 JSON；不能因此阻断插件注册。
+		// 下一次产生日志时会通过原子写入覆盖该文件。
+		return nil, nil
 	}
 	if len(logs) > maxPersistedLogs {
 		logs = append([]ExecutionLog(nil), logs[len(logs)-maxPersistedLogs:]...)
