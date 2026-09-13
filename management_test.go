@@ -129,7 +129,7 @@ func TestManagementConfigGetAndPut(t *testing.T) {
 	if err := json.Unmarshal(getResponse.Body, &currentCfg); err != nil {
 		t.Fatal(err)
 	}
-	if currentCfg.ActivationTimes != "08:00,20:00" || currentCfg.ActivationRequestsPerRun != 2 {
+	if currentCfg.ActivationTimes != "07:00,12:15,17:30" || currentCfg.ActivationRequestsPerRun != 2 {
 		t.Fatalf("unexpected current config: %+v", currentCfg)
 	}
 
@@ -221,13 +221,13 @@ func TestManagementStatusReloadsPersistedConfig(t *testing.T) {
 }
 
 func TestManagementPageMatchesSelectedActivationOnlyUI(t *testing.T) {
-	checks := []string{"Codex 定时唤醒", "data-tooltip=\"立即执行\"", "data-tooltip=\"插件设置\"", "settings-modal", "save-settings", "执行日志", "序号", "page-size", "随机延迟", "max-height:377px", "overflow:auto", "nth-child(4){width:10%}", "nth-child(8){width:18%}", "02:15,08:15,14:15,20:15"}
+	checks := []string{"Codex 定时唤醒", "data-tooltip=\"立即执行\"", "data-tooltip=\"插件设置\"", "settings-modal", "save-settings", "执行日志", "序号", "page-size", "随机延迟", "max-height:377px", "overflow:auto", "nth-child(4){width:10%}", "nth-child(8){width:18%}", "07:00,12:15,17:30", "07:00,12:15,17:30,23:45"}
 	for _, expected := range checks {
 		if !strings.Contains(statusPageHTML, expected) {
 			t.Fatalf("page missing %q", expected)
 		}
 	}
-	for _, removed := range []string{"读取额度", "调度规则", "keeper_db_path", ">配置<"} {
+	for _, removed := range []string{"读取额度", "调度规则", "keeper_db_path", ">配置<", "早晚 (08:00,20:00)"} {
 		if strings.Contains(statusPageHTML, removed) {
 			t.Fatalf("page still contains removed UI %q", removed)
 		}

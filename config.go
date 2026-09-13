@@ -67,7 +67,7 @@ type registrationCapabilities struct {
 
 func defaultConfig() Config {
 	dir, cfgPath, logPath := resolvePaths("")
-	times, text, _ := parseActivationTimes("08:00,20:00")
+	times, text, _ := parseActivationTimes("07:00,12:15,17:30")
 	return Config{
 		DataDir:                     dir,
 		ConfigPath:                  cfgPath,

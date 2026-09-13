@@ -106,10 +106,10 @@ const statusPageHTML = `<!doctype html>
           <label class="form-label" for="cfg-times">每日执行时间</label>
           <span class="form-tip">多个时间以英文逗号分隔（24小时制 HH:mm）</span>
         </div>
-        <input class="control" id="cfg-times" type="text" placeholder="08:00,20:00" autocomplete="off" required>
+        <input class="control" id="cfg-times" type="text" placeholder="07:00,12:15,17:30" autocomplete="off" required>
         <div class="preset-group">
-          <button type="button" class="preset-btn" data-preset="08:00,20:00">早晚 (08:00,20:00)</button>
-          <button type="button" class="preset-btn" data-preset="02:15,08:15,14:15,20:15">四频 (02:15,08:15,14:15,20:15)</button>
+          <button type="button" class="preset-btn" data-preset="07:00,12:15,17:30">三频 (07:00,12:15,17:30)</button>
+          <button type="button" class="preset-btn" data-preset="07:00,12:15,17:30,23:45">四频 (07:00,12:15,17:30,23:45)</button>
         </div>
       </div>
 
@@ -165,7 +165,7 @@ function notice(text,error=false){const node=$('notice');node.textContent=text;n
 function validDate(value){if(!value)return null;const date=new Date(value);return Number.isNaN(date.getTime())||date.getUTCFullYear()<=1?null:date}
 function dateTime(value){const date=validDate(value);return date?date.toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).replaceAll('/','-'):'—'}
 function nextText(value,enabled){if(!enabled)return '已停用';const date=validDate(value);if(!date)return '—';const now=new Date(),tomorrow=new Date(now);tomorrow.setDate(now.getDate()+1);const time=date.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false});if(date.toDateString()===now.toDateString())return '今天 '+time;if(date.toDateString()===tomorrow.toDateString())return '明天 '+time;return date.toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'})+' '+time}
-function renderStatus(data){$('version').textContent='v'+data.version;const enabled=!!data.enabled;$('next-run').textContent=nextText(data.next_scheduled_at,enabled);$('timezone').textContent=data.timezone||'—';$('request-count').textContent=Number(data.requests_per_run||0)+' 次';$('random-delay').textContent='0 – '+Number(data.random_delay_max_seconds||0)+' 秒';const running=!!(data.run&&data.run.running),button=$('execute');button.disabled=running;button.classList.toggle('is-loading',running);button.setAttribute('aria-busy',String(running));button.setAttribute('aria-label',running?'执行中':'立即执行');clearTimeout(statusTimer);statusTimer=setTimeout(refreshStatus,running?1500:15000)}
+function renderStatus(data){$('version').textContent='v'+data.version;const enabled=!!data.enabled;$('next-run').textContent=nextText(data.next_scheduled_at,enabled);$('timezone').textContent=data.timezone||'—';$('request-count').textContent=Number(data.requests_per_run||0)+' 次';$('random-delay').textContent='0～'+Number(data.random_delay_max_seconds||0)+' 秒';const running=!!(data.run&&data.run.running),button=$('execute');button.disabled=running;button.classList.toggle('is-loading',running);button.setAttribute('aria-busy',String(running));button.setAttribute('aria-label',running?'执行中':'立即执行');clearTimeout(statusTimer);statusTimer=setTimeout(refreshStatus,running?1500:15000)}
 async function refreshStatus(){try{const data=await request('/status');renderStatus(data);await loadLogs(false)}catch(error){notice(error.message,true)}}
 function queryString(){const query=new URLSearchParams({page:String(page),page_size:String(pageSize),result:$('result-filter').value,trigger:$('trigger-filter').value});const account=$('account-filter').value.trim();if(account)query.set('account',account);return query.toString()}
 function triggerTag(value){if(value==='manual')return '<span class="tag manual">手动</span>';return '<span class="tag scheduled">定时</span>'}

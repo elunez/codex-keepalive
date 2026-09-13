@@ -196,10 +196,6 @@ jobs:
           RELEASE_TAG: ${{ needs.metadata.outputs.tag }}
         run: |
           set -euo pipefail
-          # 首次从 v0.0.1 重新发布时，清理历史重置前遗留的旧 Release。
-          if [[ "${RELEASE_TAG}" == "v0.0.2" ]]; then
-            gh release delete "v0.6.11" --repo "${GITHUB_REPOSITORY}" --yes --cleanup-tag || true
-          fi
           if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             gh release upload "${RELEASE_TAG}" dist/*.zip dist/checksums.txt \
               --clobber \

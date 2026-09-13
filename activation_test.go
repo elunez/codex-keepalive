@@ -102,8 +102,6 @@ func TestManualActivationExecutesEveryAccountRequest(t *testing.T) {
 		doDelay:  20 * time.Millisecond,
 	}
 	service := newTestService(t, host)
-	service.cfg.ActivationRequestsPerRun = 2
-	service.cfg.ActivationConcurrency = 2
 	if _, err := service.StartManualActivation(); err != nil {
 		t.Fatal(err)
 	}
@@ -174,8 +172,13 @@ func TestPlanDelaysUsesUniqueValuesWhenRangeAllows(t *testing.T) {
 
 func TestNextScheduledAtUsesConfiguredTimezone(t *testing.T) {
 	service := newTestService(t, &fakeHost{})
-	service.cfg.ActivationTimezone = "Asia/Shanghai"
-	service.cfg.ActivationTimes = []clockTime{{Hour: 8}, {Hour: 20}}
+	updated := service.Config()
+	updated.ActivationTimezone = "Asia/Shanghai"
+	updated.ActivationTimes = []clockTime{{Hour: 8}, {Hour: 20}}
+	updated.ActivationTimesText = "08:00,20:00"
+	if err := service.UpdateConfig(updated); err != nil {
+		t.Fatal(err)
+	}
 	location, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		t.Fatal(err)

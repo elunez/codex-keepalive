@@ -12,7 +12,7 @@ func TestDecodeConfigUsesSimpleActivationDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !cfg.ActivationEnabled || cfg.ActivationTimesText != "08:00,20:00" {
+	if !cfg.ActivationEnabled || cfg.ActivationTimesText != "07:00,12:15,17:30" {
 		t.Fatalf("unexpected schedule defaults: %+v", cfg)
 	}
 	if cfg.ActivationRequestsPerRun != 2 || cfg.ActivationRandomDelaySecond != 60 || cfg.ActivationConcurrency != 2 {
@@ -169,6 +169,58 @@ func TestNewServiceFallsBackWhenPersistedConfigIsInvalid(t *testing.T) {
 	}
 	if got := service.Config(); got.ActivationModel != cfg.ActivationModel || got.ActivationRequestsPerRun != cfg.ActivationRequestsPerRun {
 		t.Fatalf("service did not fall back to runtime config: %+v", got)
+	}
+}
+
+func TestUpdateConfigKeepsRuntimeStateWhenPersistenceFails(t *testing.T) {
+	dir := t.TempDir()
+	cfg := defaultConfig()
+	cfg.DataDir = dir
+	cfg.ConfigPath = filepath.Join(dir, "config.json")
+	cfg.LogsPath = filepath.Join(dir, "logs.json")
+	service, err := NewService(cfg, &fakeHost{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	badPath := filepath.Join(dir, "config-target")
+	if err := os.Mkdir(badPath, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	updated := service.Config()
+	updated.ConfigPath = badPath
+	updated.ActivationModel = "gpt-4.1"
+	if err := service.UpdateConfig(updated); err == nil {
+		t.Fatal("expected config persistence to fail")
+	}
+	got := service.Config()
+	if got.ActivationModel != cfg.ActivationModel || got.ConfigPath != cfg.ConfigPath {
+		t.Fatalf("runtime config changed after persistence failure: %+v", got)
+	}
+}
+
+func TestReloadPersistedConfigRepairsInvalidValues(t *testing.T) {
+	dir := t.TempDir()
+	cfg := defaultConfig()
+	cfg.DataDir = dir
+	cfg.ConfigPath = filepath.Join(dir, "config.json")
+	cfg.LogsPath = filepath.Join(dir, "logs.json")
+	service, err := NewService(cfg, &fakeHost{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cfg.ConfigPath, []byte(`{"activation_model":"","activation_requests_per_run":0}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.ReloadPersistedConfig(); err != nil {
+		t.Fatalf("invalid persisted config should be repaired: %v", err)
+	}
+	if got := service.Config(); got.ActivationModel != cfg.ActivationModel || got.ActivationTimesText != cfg.ActivationTimesText {
+		t.Fatalf("runtime config changed while repairing invalid file: %+v", got)
+	}
+	repaired, err := loadConfigFile(cfg.ConfigPath)
+	if err != nil || repaired == nil || repaired.ActivationModel != cfg.ActivationModel {
+		t.Fatalf("invalid config was not repaired: cfg=%+v err=%v", repaired, err)
 	}
 }
 

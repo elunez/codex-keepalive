@@ -299,6 +299,12 @@ func (s *Service) Context() context.Context {
 	return s.ctx
 }
 
+func (s *Service) configSnapshot() Config {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.cfg
+}
+
 func (s *Service) Stop(_ bool) {
 	if s == nil {
 		return
@@ -317,9 +323,8 @@ func (s *Service) Stop(_ bool) {
 func (s *Service) runScheduler(ctx context.Context) {
 	defer close(s.done)
 	for {
-		s.mu.RLock()
-		enabled := s.cfg.ActivationEnabled
-		s.mu.RUnlock()
+		cfg := s.configSnapshot()
+		enabled := cfg.ActivationEnabled
 		if !enabled {
 			select {
 			case <-ctx.Done():
@@ -328,7 +333,7 @@ func (s *Service) runScheduler(ctx context.Context) {
 				continue
 			}
 		}
-		next, err := s.nextScheduledAt(time.Now())
+		next, err := nextScheduledAtForConfig(cfg, time.Now())
 		if err != nil {
 			s.setRunError(err.Error())
 			select {
@@ -360,14 +365,18 @@ func (s *Service) runScheduler(ctx context.Context) {
 }
 
 func (s *Service) nextScheduledAt(now time.Time) (time.Time, error) {
-	location, err := time.LoadLocation(s.cfg.ActivationTimezone)
+	return nextScheduledAtForConfig(s.configSnapshot(), now)
+}
+
+func nextScheduledAtForConfig(cfg Config, now time.Time) (time.Time, error) {
+	location, err := time.LoadLocation(cfg.ActivationTimezone)
 	if err != nil {
 		return time.Time{}, err
 	}
 	localNow := now.In(location)
 	for dayOffset := 0; dayOffset <= 1; dayOffset++ {
 		day := localNow.AddDate(0, 0, dayOffset)
-		for _, configured := range s.cfg.ActivationTimes {
+		for _, configured := range cfg.ActivationTimes {
 			candidate := time.Date(day.Year(), day.Month(), day.Day(), configured.Hour, configured.Minute, 0, 0, location)
 			if candidate.After(localNow) {
 				return candidate, nil
@@ -404,6 +413,7 @@ func (s *Service) startActivation(trigger string) (string, error) {
 }
 
 func (s *Service) runActivationRound(ctx context.Context, runID, trigger string) {
+	cfg := s.configSnapshot()
 	auths, err := s.host.ListAuths()
 	if err != nil {
 		s.appendLog(ExecutionLog{
@@ -434,7 +444,7 @@ func (s *Service) runActivationRound(ctx context.Context, runID, trigger string)
 			})
 			continue
 		}
-		for requestIndex := 1; requestIndex <= s.cfg.ActivationRequestsPerRun; requestIndex++ {
+		for requestIndex := 1; requestIndex <= cfg.ActivationRequestsPerRun; requestIndex++ {
 			jobs = append(jobs, activationJob{Auth: auth, Account: account, RequestIndex: requestIndex})
 		}
 	}
@@ -446,8 +456,8 @@ func (s *Service) runActivationRound(ctx context.Context, runID, trigger string)
 		})
 	}
 
-	delays := s.planDelays(len(jobs), s.cfg.ActivationRandomDelaySecond)
-	requestsPerAccount := s.cfg.ActivationRequestsPerRun
+	delays := s.planDelays(len(jobs), cfg.ActivationRandomDelaySecond)
+	requestsPerAccount := cfg.ActivationRequestsPerRun
 	for start := 0; start < len(jobs); start += requestsPerAccount {
 		end := start + requestsPerAccount
 		if end > len(jobs) {
@@ -458,7 +468,7 @@ func (s *Service) runActivationRound(ctx context.Context, runID, trigger string)
 			jobs[index].DelaySeconds = delays[index]
 		}
 	}
-	semaphore := make(chan struct{}, s.cfg.ActivationConcurrency)
+	semaphore := make(chan struct{}, cfg.ActivationConcurrency)
 	var group sync.WaitGroup
 	var successes atomic.Int64
 	var failures atomic.Int64
@@ -478,7 +488,7 @@ func (s *Service) runActivationRound(ctx context.Context, runID, trigger string)
 			defer func() { <-semaphore }()
 
 			executedAt := time.Now()
-			model, activationErr := s.activateAccount(job.Auth, activationSettingsFromConfig(s.cfg))
+			model, activationErr := s.activateAccount(job.Auth, activationSettingsFromConfig(cfg))
 			status := "success"
 			detail := "唤醒请求已发送"
 			if activationErr != nil {
@@ -490,7 +500,7 @@ func (s *Service) runActivationRound(ctx context.Context, runID, trigger string)
 			}
 			s.appendLog(ExecutionLog{
 				RunID: runID, ExecutedAt: executedAt, Account: job.Account, AuthID: job.Auth.ID,
-				Trigger: trigger, RequestIndex: job.RequestIndex, RequestTotal: s.cfg.ActivationRequestsPerRun,
+				Trigger: trigger, RequestIndex: job.RequestIndex, RequestTotal: cfg.ActivationRequestsPerRun,
 				DelaySeconds: job.DelaySeconds, Status: status, Detail: detail, Model: model,
 			})
 		}()
@@ -601,7 +611,15 @@ func (s *Service) ReloadPersistedConfig() error {
 	}
 	restored, err := persisted.toConfig(base)
 	if err != nil {
-		return err
+		// 与启动阶段保持一致：语义无效的持久化配置不阻断服务，
+		// 用当前有效配置修复文件，避免管理页面反复返回 500。
+		s.mu.Lock()
+		saveErr := s.persistConfigLocked()
+		s.mu.Unlock()
+		if saveErr != nil {
+			return fmt.Errorf("修复持久化配置失败: %w", saveErr)
+		}
+		return nil
 	}
 	s.mu.Lock()
 	s.cfg = restored
@@ -625,8 +643,10 @@ func (s *Service) persistLogsLocked() error {
 
 func (s *Service) UpdateConfig(newCfg Config) error {
 	s.mu.Lock()
-	s.cfg = newCfg
-	err := s.persistConfigLocked()
+	err := saveConfigFile(newCfg.ConfigPath, newCfg)
+	if err == nil {
+		s.cfg = newCfg
+	}
 	s.mu.Unlock()
 	if err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)
@@ -641,14 +661,15 @@ func (s *Service) UpdateConfig(newCfg Config) error {
 }
 
 func (s *Service) Status(now time.Time) (Config, RunStatus, time.Time) {
+	cfg := s.configSnapshot()
 	s.mu.RLock()
 	status := s.status
 	s.mu.RUnlock()
 	var next time.Time
-	if s.cfg.ActivationEnabled {
-		next, _ = s.nextScheduledAt(now)
+	if cfg.ActivationEnabled {
+		next, _ = nextScheduledAtForConfig(cfg, now)
 	}
-	return s.cfg, status, next
+	return cfg, status, next
 }
 
 func (s *Service) appendLog(entry ExecutionLog) {
@@ -736,7 +757,8 @@ func (s *Service) ClearLogs() error {
 }
 
 func (s *Service) refreshLogsAndPersistConfig() error {
-	logs, err := loadLogsFile(s.cfg.LogsPath)
+	cfg := s.configSnapshot()
+	logs, err := loadLogsFile(cfg.LogsPath)
 	if err != nil {
 		return err
 	}
