@@ -1,0 +1,18 @@
+.DS_Store
+
+# 本地运行状态
+state.json
+
+# Go 与跨平台构建产物
+dist/
+*.so
+*.dylib
+*.dll
+*.h
+
+# 临时备份
+*.backup-*
+*.bak
+
+# 本地视觉验收记录
+design-qa.md

@@ -1,0 +1,214 @@
+name: Test, build and release
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || 'release' }}
+  cancel-in-progress: false
+
+env:
+  PLUGIN_ID: codex-keepalive
+
+jobs:
+  metadata:
+    name: Resolve release version
+    runs-on: ubuntu-24.04
+    outputs:
+      publish: ${{ steps.version.outputs.publish }}
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SOURCE_VERSION="$(sed -n 's/^var pluginVersion = "\([^"]*\)"/\1/p' config.go)"
+          if [[ ! "${SOURCE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "pluginVersion must be a dotted numeric version: ${SOURCE_VERSION}" >&2
+            exit 1
+          fi
+
+          PUBLISH=false
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+            if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Release tag must use v<major>.<minor>.<patch>: ${GITHUB_REF_NAME}" >&2
+              exit 1
+            fi
+            PUBLISH=true
+          elif [[ "${GITHUB_EVENT_NAME}" == "push" || "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            LATEST_TAG="$(gh release list \
+              --repo "${GITHUB_REPOSITORY}" \
+              --exclude-drafts \
+              --exclude-pre-releases \
+              --limit 100 \
+              --json tagName \
+              --jq '.[].tagName' \
+              | sed -n 's/^v\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)$/\1/p' \
+              | sort -V \
+              | tail -n 1)"
+            if [[ -z "${LATEST_TAG}" ]]; then
+              VERSION="${SOURCE_VERSION}"
+            else
+              HIGHEST="$(printf '%s\n%s\n' "${SOURCE_VERSION}" "${LATEST_TAG}" | sort -V | tail -n 1)"
+              if [[ "${HIGHEST}" == "${SOURCE_VERSION}" && "${SOURCE_VERSION}" != "${LATEST_TAG}" ]]; then
+                VERSION="${SOURCE_VERSION}"
+              else
+                IFS=. read -r MAJOR MINOR PATCH <<< "${LATEST_TAG}"
+                VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+              fi
+            fi
+            PUBLISH=true
+          else
+            VERSION="${SOURCE_VERSION}"
+          fi
+
+          echo "publish=${PUBLISH}" >> "${GITHUB_OUTPUT}"
+          echo "tag=v${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "Resolved version ${VERSION}; publish=${PUBLISH}"
+
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Test
+        run: make test
+
+      - name: Vet
+        run: make vet
+
+      - name: Validate store registry
+        run: |
+          jq -e '
+            .schema_version == 1 and
+            (.plugins | length == 1) and
+            (.plugins[0].id == "codex-keepalive") and
+            (.plugins[0].repository == "https://github.com/elunez/codex-keepalive")
+          ' registry.json >/dev/null
+
+  build:
+    name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+    needs:
+      - metadata
+      - test
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            runner: ubuntu-24.04
+          - goos: linux
+            goarch: arm64
+            runner: ubuntu-24.04-arm
+          - goos: darwin
+            goarch: amd64
+            runner: macos-15-intel
+          - goos: darwin
+            goarch: arm64
+            runner: macos-15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Resolve version
+        run: |
+          VERSION="${{ needs.metadata.outputs.version }}"
+          echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
+          echo "ARCHIVE=${PLUGIN_ID}_${VERSION}_${{ matrix.goos }}_${{ matrix.goarch }}.zip" >> "${GITHUB_ENV}"
+
+      - name: Build and package
+        run: make package VERSION="${VERSION}" GOOS="${{ matrix.goos }}" GOARCH="${{ matrix.goarch }}"
+
+      - name: Validate archive layout
+        run: |
+          set -euo pipefail
+          case "${{ matrix.goos }}" in
+            darwin) EXT=dylib ;;
+            windows) EXT=dll ;;
+            *) EXT=so ;;
+          esac
+          test "$(unzip -Z1 "dist/${ARCHIVE}" | tr -d '\r')" = "${PLUGIN_ID}.${EXT}"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARCHIVE }}
+          path: |
+            dist/${{ env.ARCHIVE }}
+            dist/${{ env.ARCHIVE }}.sha256
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: needs.metadata.outputs.publish == 'true'
+    needs:
+      - metadata
+      - build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create checksums
+        run: sort dist/*.sha256 > dist/checksums.txt
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.metadata.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload "${RELEASE_TAG}" dist/*.zip dist/checksums.txt \
+              --clobber \
+              --repo "${GITHUB_REPOSITORY}"
+          else
+            gh release create "${RELEASE_TAG}" dist/*.zip dist/checksums.txt \
+              --repo "${GITHUB_REPOSITORY}" \
+              --target "${GITHUB_SHA}" \
+              --title "${RELEASE_TAG}" \
+              --generate-notes
+          fi

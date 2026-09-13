@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "plugins": [
+    {
+      "id": "codex-keepalive",
+      "name": "Codex 定时唤醒",
+      "description": "Schedules lightweight Codex activation requests for available CPA credentials with randomized staggering, concurrency limits, and an execution log UI.",
+      "author": "elunez",
+      "repository": "https://github.com/elunez/codex-keepalive",
+      "homepage": "https://github.com/elunez/codex-keepalive",
+      "tags": [
+        "Management",
+        "Codex",
+        "Automation"
+      ]
+    }
+  ]
+}
