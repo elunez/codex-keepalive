@@ -142,6 +142,13 @@ func TestManagementConfigGetAndPut(t *testing.T) {
 	if status.Enabled != false || status.ActivationTimes != "09:30,21:30" || status.RequestsPerRun != 3 || status.Concurrency != 4 {
 		t.Fatalf("status did not reflect updated config: %+v", status)
 	}
+	persisted, err := loadConfigFile(current.Config().ConfigPath)
+	if err != nil {
+		t.Fatalf("read persisted config after PUT: %v", err)
+	}
+	if persisted == nil || persisted.ActivationTimesText != "09:30,21:30" || persisted.ActivationRequestsPerRun != 3 || persisted.ActivationConcurrency != 4 {
+		t.Fatalf("PUT /config did not persist config.json: %+v", persisted)
+	}
 }
 
 func TestManagementConfigGetReloadsPersistedConfig(t *testing.T) {
