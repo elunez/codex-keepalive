@@ -133,8 +133,9 @@ type activationJob struct {
 }
 
 type Service struct {
-	cfg  Config
-	host HostClient
+	cfg            Config
+	host           HostClient
+	accountProxyDo activationProxyDoFunc
 
 	mu     sync.RWMutex
 	logs   []ExecutionLog
@@ -182,13 +183,14 @@ func NewService(cfg Config, host HostClient) (*Service, error) {
 		return nil, err
 	}
 	return &Service{
-		cfg:        cfg,
-		host:       host,
-		logs:       logs,
-		done:       make(chan struct{}),
-		reschedule: make(chan struct{}, 1),
-		random:     rand.New(rand.NewSource(time.Now().UnixNano())),
-		sleep:      sleepContext,
+		cfg:            cfg,
+		host:           host,
+		accountProxyDo: doActivationWithAccountProxy,
+		logs:           logs,
+		done:           make(chan struct{}),
+		reschedule:     make(chan struct{}, 1),
+		random:         rand.New(rand.NewSource(time.Now().UnixNano())),
+		sleep:          sleepContext,
 	}, nil
 }
 

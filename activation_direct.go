@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"runtime"
 	"strings"
 	"time"
@@ -21,7 +25,10 @@ const (
 type activationAuthMaterial struct {
 	AccessToken string
 	AccountID   string
+	ProxyURL    string
 }
+
+type activationProxyDoFunc func(context.Context, string, pluginapi.HTTPRequest) (pluginapi.HTTPResponse, error)
 
 type codexActivationBody struct {
 	Model        string                   `json:"model"`
@@ -84,7 +91,11 @@ func (s *Service) activateAccount(auth pluginapi.HostAuthFileEntry, settings Act
 
 	var response pluginapi.HTTPResponse
 	for attempt := 1; attempt <= activationUnauthorizedTries; attempt++ {
-		response, err = s.host.Do(request)
+		if material.ProxyURL != "" {
+			response, err = s.accountProxyDo(s.Context(), material.ProxyURL, request)
+		} else {
+			response, err = s.host.Do(request)
+		}
 		if err != nil {
 			return settings.Model, fmt.Errorf("唤醒请求失败: %w", err)
 		}
@@ -134,6 +145,7 @@ func parseActivationAuthMaterial(raw json.RawMessage) (activationAuthMaterial, e
 	material := activationAuthMaterial{
 		AccessToken: firstActivationString(root, "access_token", "accessToken", "oauth_access_token", "oauthAccessToken", "token", "id_token", "idToken"),
 		AccountID:   firstActivationString(root, "account_id", "chatgpt_account_id", "accountId", "chatgptAccountId"),
+		ProxyURL:    firstActivationString(root, "proxy_url", "proxy-url", "proxyURL"),
 	}
 	for _, key := range []string{"tokens", "credentials", "auth", "oauth", "session"} {
 		rawNested, ok := root[key]
@@ -150,11 +162,70 @@ func parseActivationAuthMaterial(raw json.RawMessage) (activationAuthMaterial, e
 		if material.AccountID == "" {
 			material.AccountID = firstActivationString(nested, "account_id", "chatgpt_account_id", "accountId", "chatgptAccountId")
 		}
+		if material.ProxyURL == "" {
+			material.ProxyURL = firstActivationString(nested, "proxy_url", "proxy-url", "proxyURL")
+		}
 	}
 	if material.AccessToken == "" {
 		return activationAuthMaterial{}, errors.New("目标 Codex 账号凭据缺少访问令牌")
 	}
 	return material, nil
+}
+
+func doActivationWithAccountProxy(ctx context.Context, proxyURL string, request pluginapi.HTTPRequest) (pluginapi.HTTPResponse, error) {
+	transport, err := buildActivationProxyTransport(proxyURL)
+	if err != nil {
+		return pluginapi.HTTPResponse{}, fmt.Errorf("账号代理配置无效: %w", err)
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	httpRequest, err := http.NewRequestWithContext(ctx, request.Method, request.URL, bytes.NewReader(request.Body))
+	if err != nil {
+		return pluginapi.HTTPResponse{}, fmt.Errorf("创建账号代理请求失败: %w", err)
+	}
+	httpRequest.Header = request.Headers.Clone()
+	client := &http.Client{Transport: transport}
+	defer client.CloseIdleConnections()
+	response, err := client.Do(httpRequest)
+	if err != nil {
+		return pluginapi.HTTPResponse{}, fmt.Errorf("执行账号代理请求失败: %w", err)
+	}
+	defer response.Body.Close()
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return pluginapi.HTTPResponse{}, fmt.Errorf("读取账号代理响应失败: %w", err)
+	}
+	return pluginapi.HTTPResponse{
+		StatusCode: response.StatusCode,
+		Headers:    response.Header.Clone(),
+		Body:       body,
+	}, nil
+}
+
+func buildActivationProxyTransport(raw string) (*http.Transport, error) {
+	transport, ok := http.DefaultTransport.(*http.Transport)
+	if !ok || transport == nil {
+		transport = &http.Transport{}
+	} else {
+		transport = transport.Clone()
+	}
+	trimmed := strings.TrimSpace(raw)
+	if strings.EqualFold(trimmed, "direct") || strings.EqualFold(trimmed, "none") {
+		transport.Proxy = nil
+		return transport, nil
+	}
+	proxyURL, err := url.Parse(trimmed)
+	if err != nil || proxyURL.Scheme == "" || proxyURL.Host == "" {
+		return nil, errors.New("代理 URL 缺少有效的协议或地址")
+	}
+	switch strings.ToLower(proxyURL.Scheme) {
+	case "http", "https", "socks5", "socks5h":
+		transport.Proxy = http.ProxyURL(proxyURL)
+		return transport, nil
+	default:
+		return nil, fmt.Errorf("不支持的代理协议 %q", proxyURL.Scheme)
+	}
 }
 
 func firstActivationString(document map[string]json.RawMessage, keys ...string) string {

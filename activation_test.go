@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"path/filepath"
@@ -195,12 +196,67 @@ func TestNextScheduledAtUsesConfiguredTimezone(t *testing.T) {
 }
 
 func TestParseActivationAuthMaterial(t *testing.T) {
-	material, err := parseActivationAuthMaterial(json.RawMessage(`{"tokens":{"access_token":"secret"},"account_id":"account"}`))
+	material, err := parseActivationAuthMaterial(json.RawMessage(`{"tokens":{"access_token":"secret"},"account_id":"account","proxy_url":"socks5://127.0.0.1:1080"}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if material.AccessToken != "secret" || material.AccountID != "account" {
+	if material.AccessToken != "secret" || material.AccountID != "account" || material.ProxyURL != "socks5://127.0.0.1:1080" {
 		t.Fatalf("unexpected material: %+v", material)
+	}
+}
+
+func TestAccountProxyTakesPrecedenceOverHostHTTP(t *testing.T) {
+	host := &fakeHost{
+		auths: []pluginapi.HostAuthFileEntry{{ID: "a", AuthIndex: "a-index", Provider: "codex"}},
+		documents: map[string]json.RawMessage{
+			"a-index": json.RawMessage(`{"access_token":"token-a","proxy_url":"socks5://127.0.0.1:1080"}`),
+		},
+		response: pluginapi.HTTPResponse{StatusCode: http.StatusInternalServerError},
+	}
+	service := newTestService(t, host)
+	var usedProxy string
+	service.accountProxyDo = func(_ context.Context, proxyURL string, _ pluginapi.HTTPRequest) (pluginapi.HTTPResponse, error) {
+		usedProxy = proxyURL
+		return pluginapi.HTTPResponse{StatusCode: http.StatusOK, Body: []byte(`{"id":"resp_test"}`)}, nil
+	}
+	if _, err := service.activateAccount(host.auths[0], activationSettingsFromConfig(service.Config())); err != nil {
+		t.Fatal(err)
+	}
+	if usedProxy != "socks5://127.0.0.1:1080" {
+		t.Fatalf("account proxy = %q", usedProxy)
+	}
+	host.mu.Lock()
+	defer host.mu.Unlock()
+	if host.requests != 0 {
+		t.Fatalf("host HTTP requests = %d, want 0", host.requests)
+	}
+}
+
+func TestBuildActivationProxyTransport(t *testing.T) {
+	transport, err := buildActivationProxyTransport("socks5://user:pass@127.0.0.1:1080")
+	if err != nil {
+		t.Fatal(err)
+	}
+	request, err := http.NewRequest(http.MethodGet, "https://chatgpt.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proxyURL, err := transport.Proxy(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if proxyURL.String() != "socks5://user:pass@127.0.0.1:1080" {
+		t.Fatalf("proxy URL = %q", proxyURL.String())
+	}
+	direct, err := buildActivationProxyTransport("direct")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if direct.Proxy != nil {
+		t.Fatal("direct transport must bypass proxies")
+	}
+	if _, err := buildActivationProxyTransport("sock5://127.0.0.1:1080"); err == nil {
+		t.Fatal("unsupported proxy scheme must fail")
 	}
 }
 
