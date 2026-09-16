@@ -76,7 +76,7 @@ func defaultConfig() Config {
 		ActivationTimes:             times,
 		ActivationTimesText:         text,
 		ActivationTimezone:          "Asia/Shanghai",
-		ActivationModel:             "gpt-5.5",
+		ActivationModel:             "gpt-5.6-sol",
 		ActivationRequestsPerRun:    2,
 		ActivationRandomDelaySecond: 60,
 		ActivationConcurrency:       2,

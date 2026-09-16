@@ -15,6 +15,9 @@ func TestDecodeConfigUsesSimpleActivationDefaults(t *testing.T) {
 	if !cfg.ActivationEnabled || cfg.ActivationTimesText != "07:00,12:15,17:30" {
 		t.Fatalf("unexpected schedule defaults: %+v", cfg)
 	}
+	if cfg.ActivationModel != "gpt-5.6-sol" {
+		t.Fatalf("unexpected default activation model: %q", cfg.ActivationModel)
+	}
 	if cfg.ActivationRequestsPerRun != 2 || cfg.ActivationRandomDelaySecond != 60 || cfg.ActivationConcurrency != 2 {
 		t.Fatalf("unexpected execution defaults: %+v", cfg)
 	}

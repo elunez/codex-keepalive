@@ -120,7 +120,7 @@ const statusPageHTML = `<!doctype html>
         </div>
         <div class="form-row">
           <label class="form-label" for="cfg-model">唤醒模型</label>
-          <input class="control" id="cfg-model" type="text" placeholder="gpt-5.5" autocomplete="off" required>
+          <input class="control" id="cfg-model" type="text" placeholder="gpt-5.6-sol" autocomplete="off" required>
         </div>
       </div>
 
@@ -193,7 +193,7 @@ async function openSettingsModal(){
     $('cfg-enabled').setAttribute('aria-checked',String(enabled));
     $('cfg-times').value=data.activation_times||'';
     $('cfg-timezone').value=data.activation_timezone||'Asia/Shanghai';
-    $('cfg-model').value=data.activation_model||'gpt-5.5';
+    $('cfg-model').value=data.activation_model||'gpt-5.6-sol';
     $('cfg-requests').value=data.activation_requests_per_run||2;
     $('cfg-concurrency').value=data.activation_concurrency||2;
     $('cfg-delay').value=data.activation_random_delay_seconds!=null?data.activation_random_delay_seconds:60;
