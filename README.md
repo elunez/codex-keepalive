@@ -48,12 +48,12 @@ plugins:
 需要 Go 1.26.0 和目标平台可用的 C 编译器。CLIProxyAPI SDK 通过 Go Modules 获取。
 
 ```sh
-make package VERSION=0.0.1
+make package VERSION=0.1.0
 ```
 
 插件源码不包含架构相关逻辑，可分别为 Linux `amd64`、Linux `arm64`、macOS `amd64` 和 macOS `arm64` 构建。`c-shared` 使用 CGO，跨架构构建时需要对应的交叉编译器；仓库中的 GitHub Actions 使用对应架构的原生 runner 构建。
 
-每次推送到 `main` 后，GitHub Actions 都会自动测试、构建并发布。第一次发布使用源码中的基准版本，之后自动递增补丁版本，例如 `v0.0.1`、`v0.0.2`、`v0.0.3`：
+每次推送到 `main` 后，GitHub Actions 都会自动测试、构建并发布。第一次发布使用源码中的基准版本，之后按十进制逐级进位，例如 `v0.0.9` 的下一版是 `v0.1.0`，`v0.9.9` 的下一版是 `v1.0.0`：
 
 ```sh
 git push origin main

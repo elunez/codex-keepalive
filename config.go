@@ -18,7 +18,7 @@ const (
 )
 
 // pluginVersion 会在发布构建时由 -ldflags 注入；默认值用于本地开发和测试。
-var pluginVersion = "0.0.1"
+var pluginVersion = "0.1.0"
 
 type clockTime struct {
 	Hour   int

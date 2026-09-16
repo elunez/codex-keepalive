@@ -67,7 +67,16 @@ jobs:
                 VERSION="${SOURCE_VERSION}"
               else
                 IFS=. read -r MAJOR MINOR PATCH <<< "${LATEST_TAG}"
-                VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+                PATCH=$((PATCH + 1))
+                if (( PATCH >= 10 )); then
+                  PATCH=0
+                  MINOR=$((MINOR + 1))
+                fi
+                if (( MINOR >= 10 )); then
+                  MINOR=0
+                  MAJOR=$((MAJOR + 1))
+                fi
+                VERSION="${MAJOR}.${MINOR}.${PATCH}"
               fi
             fi
             PUBLISH=true
