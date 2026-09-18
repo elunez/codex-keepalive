@@ -222,13 +222,13 @@ func TestManagementStatusReloadsPersistedConfig(t *testing.T) {
 
 func TestManagementPageMatchesSelectedActivationOnlyUI(t *testing.T) {
 	page := renderStatusPage()
-	checks := []string{"Codex 定时唤醒", "id=\"version\">v" + pluginVersion, "data-tooltip=\"立即执行\"", "data-tooltip=\"插件设置\"", "settings-modal", "save-settings", "STORAGE_PREFIX_V1", "STORAGE_PREFIX_V2", "cli-proxy-auth", "未读取到管理凭证", "记住凭证", "执行日志", "序号", "page-size", "随机延迟", "max-height:377px", "overflow:auto", "nth-child(4){width:10%}", "nth-child(8){width:18%}", "07:00,12:15,17:30", "07:00,12:15,17:30,23:45"}
+	checks := []string{"Codex 定时唤醒", "id=\"version\">v" + pluginVersion, "data-tooltip=\"立即执行\"", "data-tooltip=\"插件设置\"", "settings-modal", "save-settings", "STORAGE_PREFIX_V1", "STORAGE_PREFIX_V2", "cli-proxy-auth", "未读取到管理凭证", "记住凭证", "执行日志", "序号", "page-size", "随机延迟", "--canvas:#f3f7fc", "--blue:#5276ad", ".result-pill.success{background:var(--blue-soft);color:var(--blue)}", "background:var(--surface);color:var(--ink)", "max-height:377px", "overflow:auto", "nth-child(4){width:10%}", "nth-child(8){width:18%}", "07:00,12:15,17:30", "07:00,12:15,17:30,23:45"}
 	for _, expected := range checks {
 		if !strings.Contains(page, expected) {
 			t.Fatalf("page missing %q", expected)
 		}
 	}
-	for _, removed := range []string{"{{PLUGIN_VERSION}}", "读取额度", "调度规则", "keeper_db_path", ">配置<", "早晚 (08:00,20:00)", "cfg-management-key", "management-key-form", "PLUGIN_KEY_STORAGE", "独立保存"} {
+	for _, removed := range []string{"{{PLUGIN_VERSION}}", "#2870ed", "读取额度", "调度规则", "keeper_db_path", ">配置<", "早晚 (08:00,20:00)", "cfg-management-key", "management-key-form", "PLUGIN_KEY_STORAGE", "独立保存"} {
 		if strings.Contains(page, removed) {
 			t.Fatalf("page still contains removed UI %q", removed)
 		}
