@@ -62,7 +62,7 @@ func handleManagement(raw []byte) ([]byte, error) {
 		if method != http.MethodGet || path != "/status" {
 			return okEnvelope(jsonResponse(http.StatusNotFound, map[string]string{"error": "not found"}))
 		}
-		return okEnvelope(htmlResponse(http.StatusOK, []byte(statusPageHTML)))
+		return okEnvelope(htmlResponse(http.StatusOK, []byte(renderStatusPage())))
 	}
 	switch {
 	case method == http.MethodGet && path == "/status":
