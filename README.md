@@ -25,8 +25,10 @@ CLIProxyAPI 的 Codex 账号定时唤醒插件。插件在配置时间实时读�
 plugins:
   codex-keepalive:
     enabled: true
-    priority: 88
+    priority: 99
 ```
+
+插件优先级使用宿主配置字段，安装示例默认设置为 `99`；已有安装不会在更新时自动覆盖优先级，请在插件管理中将其调整为 `99`。
 
 页面设置说明：
 
