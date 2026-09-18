@@ -15,7 +15,7 @@ CLIProxyAPI 的 Codex 账号定时唤醒插件。插件在配置时间实时读�
 - 唤醒请求优先使用账号凭据中的 `proxy_url`；账号未配置时继承 CPA 全局 `proxy-url`，两者都未配置时直连。
 - 执行日志保存到独立的 `logs.json`，最多保留最近 5000 条；管理页支持搜索、结果/触发方式筛选和服务端分页。
 - 配置保存到独立的 `config.json`；通过 CPA“重新安装”更新插件时，即使宿主传入空配置，也会自动读取并恢复上一次配置。
-- 页面支持独立保存 CPA 管理密码，并兼容读取管理中心已保存的登录信息；独立密码只在当前浏览器中轻量混淆存储，不写入插件配置或服务端。
+- 页面兼容读取 CPA 管理中心和 CPAMP 新旧版本通过“记住凭证”保存的登录信息；插件自身不再显示或保存凭证，未读取到凭证或凭证失效时会提示重新登录。
 
 ## 插件配置
 
@@ -48,7 +48,7 @@ plugins:
 需要 Go 1.26.0 和目标平台可用的 C 编译器。CLIProxyAPI SDK 通过 Go Modules 获取。
 
 ```sh
-make package VERSION=0.1.0
+make package VERSION=0.1.2
 ```
 
 插件源码不包含架构相关逻辑，可分别为 Linux `amd64`、Linux `arm64`、macOS `amd64` 和 macOS `arm64` 构建。`c-shared` 使用 CGO，跨架构构建时需要对应的交叉编译器；仓库中的 GitHub Actions 使用对应架构的原生 runner 构建。
@@ -76,7 +76,7 @@ plugins:
 
 重新加载配置后，在 CPA 管理中心打开“插件商店”，搜索“Codex 定时唤醒”或 `codex-keepalive`，点击安装。安装器会自动选择当前系统和架构，并把插件写入 `plugins.dir` 对应目录。
 
-安装后在“插件管理”中启用插件即可；定时唤醒的业务参数请进入“定时唤醒”页面，点击右上角设置按钮进行配置。插件会优先使用自身保存的管理密码；尚未配置时可直接在页面输入，也可复用管理中心勾选“记住密码”后保存的登录信息。
+安装后在“插件管理”中启用插件即可；定时唤醒的业务参数请进入“定时唤醒”页面，点击右上角设置按钮进行配置。插件页面复用当前管理中心勾选“记住凭证”后保存的登录信息；若未保存或凭证已失效，页面会提示返回登录页重新登录。
 
 仓库已包含符合 CLIProxyAPI 官方商店规范的 `registry.json`。进入官方默认商店还需要在首个 GitHub Release 发布后，向 [`router-for-me/CLIProxyAPI-Plugins-Store`](https://github.com/router-for-me/CLIProxyAPI-Plugins-Store) 的 `registry.json` 提交相同插件条目。
 

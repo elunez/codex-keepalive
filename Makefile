@@ -1,5 +1,5 @@
 PLUGIN_ID := codex-keepalive
-VERSION ?= 0.1.0
+VERSION ?= 0.1.2
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 DIST_DIR ?= dist

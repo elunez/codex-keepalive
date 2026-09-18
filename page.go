@@ -21,7 +21,7 @@ const statusPageHTML = `<!doctype html>
 .schedule{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:center;min-height:76px;margin-bottom:22px;border:1px solid var(--line);border-radius:13px;background:var(--surface);box-shadow:var(--shadow);overflow:visible}.schedule-item{display:flex;align-items:center;justify-content:flex-start;gap:13px;min-width:0;padding:0 28px;border-right:1px solid var(--line)}.schedule-item:last-child{border-right:0}.schedule-item svg{flex:0 0 auto;width:21px;height:21px;color:#263c65}.schedule-text{display:flex;align-items:baseline;gap:10px;min-width:0;white-space:nowrap}.schedule-text span{color:var(--muted);font-size:13px}.schedule-text strong{overflow:hidden;text-overflow:ellipsis;font-size:15px}.icon-button{display:grid;place-items:center;width:42px;height:42px;padding:0;border:1px solid var(--line-strong);border-radius:10px;background:var(--surface);color:var(--blue);cursor:pointer;transition:border-color .16s,background .16s,transform .16s}.icon-button:hover{border-color:var(--blue);background:var(--blue-soft)}.icon-button:active{transform:translateY(1px)}.icon-button svg{width:21px;height:21px}.icon-button:disabled{cursor:not-allowed;opacity:.55}.icon-button.is-loading svg{animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 .logs-panel{border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden}.logs-head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 22px}.logs-heading{display:flex;align-items:center;gap:12px;min-width:0}.logs-title{display:flex;align-items:center;gap:13px}.title-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:10px;background:var(--surface-2);color:#253c66}.title-icon svg{width:22px;height:22px}.logs-title h2{margin:0 0 4px;font-size:20px;letter-spacing:-.02em}.logs-title p{margin:0;color:var(--muted);font-size:12px}.filters{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0}.search{position:relative;width:200px}.search svg{position:absolute;left:13px;top:50%;width:17px;height:17px;color:var(--muted);transform:translateY(-50%);pointer-events:none}.search input{width:100%;padding-left:40px}.control,select,input{min-height:42px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:12px}select{min-width:136px;padding:0 34px 0 13px}input{padding:0 13px}.clear-button{display:flex;align-items:center;gap:8px;min-height:42px;padding:0 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface-2);color:var(--ink);font-size:12px;font-weight:650;cursor:pointer;white-space:nowrap}.clear-button:hover{border-color:var(--line-strong);background:var(--gray-soft)}.clear-button svg{width:16px;height:16px}
 .table-wrap{margin:0 22px;max-height:377px;overflow:auto;border:1px solid var(--line);border-radius:10px;scrollbar-gutter:stable}.logs-table{width:100%;min-width:980px;border-collapse:collapse;table-layout:fixed}.logs-table thead{position:sticky;top:0;z-index:1}.logs-table th{height:47px;padding:0 18px;background:var(--surface-2);color:var(--ink);font-size:12px;font-weight:720;text-align:left}.logs-table td{height:55px;padding:0 18px;border-top:1px solid var(--line);font-size:12px;vertical-align:middle}.logs-table th:nth-child(1){width:5%}.logs-table th:nth-child(2){width:17%}.logs-table th:nth-child(3){width:18%}.logs-table th:nth-child(4){width:10%}.logs-table th:nth-child(5){width:12%}.logs-table th:nth-child(6){width:9%}.logs-table th:nth-child(7){width:11%}.logs-table th:nth-child(8){width:18%}.index-cell{color:var(--muted);font-variant-numeric:tabular-nums}.account-cell,.detail-cell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tag,.result-pill{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:680}.tag.manual{background:var(--blue-soft);color:var(--blue)}.tag.scheduled{background:var(--gray-soft);color:var(--muted)}.result-pill{gap:6px;border-radius:999px}.result-pill:before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}.result-pill.success{background:var(--green-soft);color:var(--green)}.result-pill.failed{background:var(--red-soft);color:var(--red)}.result-pill.skipped{background:var(--gray-soft);color:var(--muted)}.empty-row td{height:280px;text-align:center;color:var(--muted)}
-.pager{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:86px;margin:18px 22px 0;border-top:1px solid var(--line)}.pager-summary,.pager-controls,.page-jump{display:flex;align-items:center;gap:10px}.pager-summary{color:var(--muted);font-size:12px}.pager-summary select{min-width:108px;min-height:38px;color:var(--ink)}.pager-controls{margin-left:auto}.page-button{display:grid;place-items:center;min-width:36px;height:36px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;cursor:pointer}.page-button:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}.page-button.current{border-color:var(--blue);background:var(--blue);color:#fff}.page-button:disabled{opacity:.4;cursor:not-allowed}.ellipsis{display:grid;place-items:center;width:24px;color:var(--muted)}.page-jump{color:var(--muted);font-size:12px}.page-jump input{width:56px;min-height:36px;text-align:center}.notice{position:fixed;right:20px;bottom:20px;z-index:120;max-width:min(400px,calc(100vw - 40px));padding:11px 14px;border-radius:9px;background:#202a3d;color:#fff;font-size:12px;box-shadow:0 12px 30px rgba(0,0,0,.2)}.notice.error{background:var(--red)}.auth-state{margin:60px 22px;padding:46px 20px;border:1px dashed var(--line-strong);border-radius:12px;text-align:center;color:var(--muted)}.auth-state strong{display:block;margin-bottom:7px;color:var(--ink)}.auth-form{display:flex;flex-direction:column;gap:12px;width:min(360px,100%);margin:20px auto 0;text-align:left}.auth-form .btn-save{width:100%}.credential-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.credential-row .btn-cancel{padding:0 13px}button,input,select{outline:none}:focus-visible{outline:3px solid color-mix(in srgb,var(--blue) 28%,transparent);outline-offset:2px}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:86px;margin:18px 22px 0;border-top:1px solid var(--line)}.pager-summary,.pager-controls,.page-jump{display:flex;align-items:center;gap:10px}.pager-summary{color:var(--muted);font-size:12px}.pager-summary select{min-width:108px;min-height:38px;color:var(--ink)}.pager-controls{margin-left:auto}.page-button{display:grid;place-items:center;min-width:36px;height:36px;padding:0 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:12px;cursor:pointer}.page-button:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}.page-button.current{border-color:var(--blue);background:var(--blue);color:#fff}.page-button:disabled{opacity:.4;cursor:not-allowed}.ellipsis{display:grid;place-items:center;width:24px;color:var(--muted)}.page-jump{color:var(--muted);font-size:12px}.page-jump input{width:56px;min-height:36px;text-align:center}.notice{position:fixed;right:20px;bottom:20px;z-index:120;max-width:min(400px,calc(100vw - 40px));padding:11px 14px;border-radius:9px;background:#202a3d;color:#fff;font-size:12px;box-shadow:0 12px 30px rgba(0,0,0,.2)}.notice.error{background:var(--red)}.auth-state{margin:60px 22px;padding:46px 20px;border:1px dashed var(--line-strong);border-radius:12px;text-align:center;color:var(--muted)}.auth-state strong{display:block;margin-bottom:7px;color:var(--ink)}.auth-state span{display:block;max-width:680px;margin:0 auto;line-height:1.7}button,input,select{outline:none}:focus-visible{outline:3px solid color-mix(in srgb,var(--blue) 28%,transparent);outline-offset:2px}
 .refresh-button.is-loading svg{animation:spin .8s linear infinite}
 .modal-backdrop{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:20px;background:rgba(15,23,42,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:fadeIn .18s ease-out}
 .modal-backdrop[hidden]{display:none}
@@ -52,7 +52,7 @@ const statusPageHTML = `<!doctype html>
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 @media(max-width:1000px){.shell{width:min(100% - 28px,1400px)}.schedule{grid-template-columns:repeat(2,1fr)}.schedule-item{min-height:62px}.schedule-item:nth-child(even){border-right:0}.logs-head{align-items:flex-start;flex-direction:column}.filters{width:100%;justify-content:flex-start;flex-wrap:wrap}.search{width:min(100%,360px)}.pager{flex-wrap:wrap}.pager-controls{margin-left:0}}
-@media(max-width:620px){.shell{width:min(100% - 20px,1400px);padding-top:16px}.brand-mark{width:48px;height:48px;border-radius:12px}.brand-mark svg{width:28px;height:28px}.title-row h1{font-size:20px}.version,.subtitle{display:none}.schedule{grid-template-columns:1fr}.schedule-item{justify-content:flex-start;padding:0 18px;border-right:0;border-bottom:1px solid var(--line)}.schedule-item:last-child{border-bottom:0}.logs-head{padding:18px 14px}.logs-heading{width:auto;justify-content:flex-start}.filters{display:grid;grid-template-columns:1fr 1fr}.search{grid-column:1/-1;width:100%}.filters select{min-width:0;width:100%}.clear-button{justify-content:center}.table-wrap{margin:0 14px}.pager{align-items:flex-start;margin:14px;min-height:110px}.pager-summary{width:100%}.page-jump{display:none}.form-grid-2,.credential-row{grid-template-columns:1fr}}
+@media(max-width:620px){.shell{width:min(100% - 20px,1400px);padding-top:16px}.brand-mark{width:48px;height:48px;border-radius:12px}.brand-mark svg{width:28px;height:28px}.title-row h1{font-size:20px}.version,.subtitle{display:none}.schedule{grid-template-columns:1fr}.schedule-item{justify-content:flex-start;padding:0 18px;border-right:0;border-bottom:1px solid var(--line)}.schedule-item:last-child{border-bottom:0}.logs-head{padding:18px 14px}.logs-heading{width:auto;justify-content:flex-start}.filters{display:grid;grid-template-columns:1fr 1fr}.search{grid-column:1/-1;width:100%}.filters select{min-width:0;width:100%}.clear-button{justify-content:center}.table-wrap{margin:0 14px}.pager{align-items:flex-start;margin:14px;min-height:110px}.pager-summary{width:100%}.page-jump{display:none}.form-grid-2{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -98,17 +98,6 @@ const statusPageHTML = `<!doctype html>
       <button class="modal-close" id="close-settings" type="button" aria-label="关闭">&times;</button>
     </div>
     <form id="settings-form" class="modal-form">
-      <div class="form-row">
-        <div class="form-label-box">
-          <label class="form-label" for="cfg-management-key">插件管理密码</label>
-          <span class="form-tip">用于访问 CPA 管理接口，仅混淆保存在当前浏览器，不写入插件配置或服务端；留空保持当前值</span>
-        </div>
-        <div class="credential-row">
-          <input class="control" id="cfg-management-key" type="password" placeholder="输入 CPA 管理密码（可选）" autocomplete="current-password">
-          <button class="btn-cancel" id="clear-management-key" type="button">清除已保存密码</button>
-        </div>
-      </div>
-
       <div class="form-row form-switch-row">
         <div class="form-label-box">
           <label class="form-label">定时自动执行</label>
@@ -169,22 +158,18 @@ const statusPageHTML = `<!doctype html>
 <div class="notice" id="notice" hidden></div>
 <script>
 const API='/v0/management/plugins/codex-keepalive';
-const STORAGE_PREFIX='enc::v1::';
+const STORAGE_PREFIX_V1='enc::v1::';
+const STORAGE_PREFIX_V2='enc::v2::';
 const STORAGE_SALT='cli-proxy-api-webui::secure-storage';
-const PLUGIN_KEY_STORAGE='codex-keepalive::management-key';
 let managementKey='',page=1,pageSize=10,lastPage=null,statusTimer=null,searchTimer=null,loadingLogs=false;
 const $=id=>document.getElementById(id);
-function storageKeyBytes(){return new TextEncoder().encode(STORAGE_SALT+'|'+location.host+'|'+navigator.userAgent)}
-function decodeStored(raw){if(!raw)return null;let text=raw;if(raw.startsWith(STORAGE_PREFIX)){try{const encoded=atob(raw.slice(STORAGE_PREFIX.length)),bytes=Uint8Array.from(encoded,c=>c.charCodeAt(0)),key=new TextEncoder().encode(STORAGE_SALT+'|'+location.host+'|'+navigator.userAgent);for(let i=0;i<bytes.length;i++)bytes[i]^=key[i%key.length];text=new TextDecoder().decode(bytes)}catch{return null}}try{return JSON.parse(text)}catch{return text}}
-function encodeStored(value){const bytes=new TextEncoder().encode(JSON.stringify(value)),key=storageKeyBytes();for(let i=0;i<bytes.length;i++)bytes[i]^=key[i%key.length];let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return STORAGE_PREFIX+btoa(binary)}
-function pluginManagementKey(){try{const value=decodeStored(localStorage.getItem(PLUGIN_KEY_STORAGE));return typeof value==='string'?value.trim():''}catch{return ''}}
-function savePluginManagementKey(value){localStorage.setItem(PLUGIN_KEY_STORAGE,encodeStored(value.trim()))}
-function clearPluginManagementKey(){localStorage.removeItem(PLUGIN_KEY_STORAGE)}
-function savedManagementKey(){const pluginKey=pluginManagementKey();if(pluginKey)return pluginKey;try{const direct=decodeStored(localStorage.getItem('managementKey'));if(typeof direct==='string'&&direct.trim())return direct.trim();const auth=decodeStored(localStorage.getItem('cli-proxy-auth')),key=auth&&auth.state&&auth.state.managementKey;return typeof key==='string'?key.trim():''}catch{return ''}}
-async function request(path,options={}){if(!managementKey)throw new Error('请先配置插件管理密码');const headers={'Authorization':'Bearer '+managementKey};if(options.body&&!options.headers)headers['Content-Type']='application/json;charset=utf-8';const response=await fetch(API+path,{...options,headers});let data={};try{data=await response.json()}catch{}if(!response.ok){const error=new Error(data.error||('请求失败：HTTP '+response.status));error.status=response.status;throw error}return data}
+function storageKeyBytes(version){const suffix=version==='v2'?('|v2|'+location.host):('|'+location.host+'|'+navigator.userAgent);return new TextEncoder().encode(STORAGE_SALT+suffix)}
+function decodeStored(raw){if(!raw)return null;let text=raw;let version='',prefix='';if(raw.startsWith(STORAGE_PREFIX_V2)){version='v2';prefix=STORAGE_PREFIX_V2}else if(raw.startsWith(STORAGE_PREFIX_V1)){version='v1';prefix=STORAGE_PREFIX_V1}if(prefix){try{const encoded=atob(raw.slice(prefix.length)),bytes=Uint8Array.from(encoded,c=>c.charCodeAt(0)),key=storageKeyBytes(version);for(let i=0;i<bytes.length;i++)bytes[i]^=key[i%key.length];text=new TextDecoder().decode(bytes)}catch{return null}}try{return JSON.parse(text)}catch{return text}}
+function savedManagementKey(){try{const direct=decodeStored(localStorage.getItem('managementKey'));if(typeof direct==='string'&&direct.trim())return direct.trim();const auth=decodeStored(localStorage.getItem('cli-proxy-auth')),key=auth&&auth.state&&auth.state.managementKey;return typeof key==='string'?key.trim():''}catch{return ''}}
+async function request(path,options={}){if(!managementKey){renderAuthState();const error=new Error('未读取到管理凭证');error.status=401;throw error}const headers={'Authorization':'Bearer '+managementKey};if(options.body&&!options.headers)headers['Content-Type']='application/json;charset=utf-8';const response=await fetch(API+path,{...options,headers});let data={};try{data=await response.json()}catch{}if(!response.ok){const error=new Error(data.error||('请求失败：HTTP '+response.status));error.status=response.status;if(response.status===401||response.status===403)renderAuthState('管理凭证无效或已过期');throw error}return data}
 function safe(value){return String(value??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function notice(text,error=false){const node=$('notice');node.textContent=text;node.className='notice'+(error?' error':'');node.hidden=false;clearTimeout(notice.timer);notice.timer=setTimeout(()=>node.hidden=true,3200)}
-function renderAuthState(title='需要管理密码',detail='请输入当前 CPA 管理密码，供本插件独立访问管理接口。'){$('content').innerHTML='<div class="auth-state"><strong>'+safe(title)+'</strong><span>'+safe(detail)+'</span><form class="auth-form" id="management-key-form"><label class="form-label" for="management-key-input">管理密码</label><input class="control" id="management-key-input" type="password" autocomplete="current-password" required><button class="btn-save" type="submit">验证并保存</button></form></div>'}
+function renderAuthState(title='未读取到管理凭证',detail='请返回当前管理中心的登录页，重新登录并勾选“记住凭证”，然后刷新本页面。'){$('content').innerHTML='<div class="auth-state"><strong>'+safe(title)+'</strong><span>'+safe(detail)+'</span></div>'}
 function validDate(value){if(!value)return null;const date=new Date(value);return Number.isNaN(date.getTime())||date.getUTCFullYear()<=1?null:date}
 function dateTime(value){const date=validDate(value);return date?date.toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).replaceAll('/','-'):'—'}
 function nextText(value,enabled){if(!enabled)return '已停用';const date=validDate(value);if(!date)return '—';const now=new Date(),tomorrow=new Date(now);tomorrow.setDate(now.getDate()+1);const time=date.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false});if(date.toDateString()===now.toDateString())return '今天 '+time;if(date.toDateString()===tomorrow.toDateString())return '明天 '+time;return date.toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'})+' '+time}
@@ -206,7 +191,7 @@ function resetAndLoad(){page=1;loadLogs()}
 
 async function openSettingsModal(){
   const btn=$('open-settings');
-  if(!managementKey){renderAuthState();$('management-key-input')?.focus();return}
+  if(!managementKey){renderAuthState();return}
   btn.disabled=true;
   try{
     // 使用专用配置接口读取 config.json，字段与保存接口保持一致，
@@ -221,8 +206,6 @@ async function openSettingsModal(){
     $('cfg-requests').value=data.activation_requests_per_run||2;
     $('cfg-concurrency').value=data.activation_concurrency||2;
     $('cfg-delay').value=data.activation_random_delay_seconds!=null?data.activation_random_delay_seconds:60;
-    $('cfg-management-key').value='';
-    $('cfg-management-key').placeholder=pluginManagementKey()?'已独立保存；留空保持当前值':'输入 CPA 管理密码（可选）';
     $('settings-modal').hidden=false;
   }catch(err){
     notice('读取配置失败: '+err.message,true);
@@ -234,13 +217,12 @@ function closeSettingsModal(){
   $('settings-modal').hidden=true;
 }
 
-async function initialize(){managementKey=savedManagementKey();if(!managementKey){renderAuthState();return}try{const data=await request('/status');renderStatus(data);await loadLogs()}catch(error){if(error.status===401||error.status===403){renderAuthState('管理密码无效','请输入当前 CPA 管理密码后重新验证。')}else{$('content').innerHTML='<div class="auth-state"><strong>无法读取插件状态</strong><span>'+safe(error.message)+'</span></div>'}notice(error.message,true)}}
+async function initialize(){managementKey=savedManagementKey();if(!managementKey){renderAuthState();return}try{const data=await request('/status');renderStatus(data);await loadLogs()}catch(error){if(error.status!==401&&error.status!==403){$('content').innerHTML='<div class="auth-state"><strong>无法读取插件状态</strong><span>'+safe(error.message)+'</span></div>';notice(error.message,true)}}}
 
 $('execute').addEventListener('click',executeNow);
 $('open-settings').addEventListener('click',openSettingsModal);
 $('close-settings').addEventListener('click',closeSettingsModal);
 $('cancel-settings').addEventListener('click',closeSettingsModal);
-$('clear-management-key').addEventListener('click',()=>{clearPluginManagementKey();$('cfg-management-key').value='';$('cfg-management-key').placeholder='未独立保存';notice('已清除本插件保存的管理密码')});
 $('settings-modal').addEventListener('click',e=>{if(e.target===$('settings-modal'))closeSettingsModal()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('settings-modal').hidden)closeSettingsModal()});
 $('cfg-enabled').addEventListener('click',()=>{
@@ -259,9 +241,6 @@ $('settings-form').addEventListener('submit',async e=>{
   if(saveBtn.disabled)return;
   saveBtn.disabled=true;
   saveBtn.textContent='保存中…';
-  const previousManagementKey=managementKey;
-  const nextManagementKey=$('cfg-management-key').value.trim();
-  if(nextManagementKey)managementKey=nextManagementKey;
   const payload={
     activation_enabled:$('cfg-enabled').classList.contains('on'),
     activation_times:$('cfg-times').value.trim(),
@@ -272,13 +251,11 @@ $('settings-form').addEventListener('submit',async e=>{
     activation_random_delay_seconds:Number($('cfg-delay').value)||0
   };
   try{
-    if(nextManagementKey){await request('/status');savePluginManagementKey(nextManagementKey)}
     await request('/settings',{method:'PUT',body:JSON.stringify(payload)});
     notice('配置保存成功');
     closeSettingsModal();
     await refreshStatus();
   }catch(err){
-    managementKey=previousManagementKey;
     notice(err.message,true);
   }finally{
     saveBtn.disabled=false;
@@ -290,7 +267,6 @@ $('clear-logs').addEventListener('click',clearLogs);
 $('result-filter').addEventListener('change',resetAndLoad);
 $('trigger-filter').addEventListener('change',resetAndLoad);
 $('account-filter').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(resetAndLoad,300)});
-$('content').addEventListener('submit',async event=>{if(event.target.id!=='management-key-form')return;event.preventDefault();const input=$('management-key-input'),button=event.target.querySelector('button[type="submit"]'),candidate=input.value.trim();if(!candidate)return;button.disabled=true;button.textContent='验证中…';managementKey=candidate;try{const data=await request('/status');savePluginManagementKey(candidate);renderStatus(data);await loadLogs();notice('管理密码已保存到当前浏览器')}catch(error){managementKey='';input.value='';button.disabled=false;button.textContent='验证并保存';notice(error.status===401||error.status===403?'管理密码不正确':error.message,true)}});
 $('content').addEventListener('click',event=>{const button=event.target.closest('[data-page]');if(!button||button.disabled)return;page=Number(button.dataset.page);loadLogs()});
 $('content').addEventListener('change',event=>{if(event.target.id==='page-size'){pageSize=Number(event.target.value);page=1;loadLogs()}if(event.target.id==='page-jump'){const target=Math.max(1,Math.min(Number(event.target.value)||1,lastPage&&lastPage.total_pages||1));page=target;loadLogs()}});
 initialize();
